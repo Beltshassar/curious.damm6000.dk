@@ -87,18 +87,20 @@ const slotStyle = computed(() => {
         @pointercancel="onPointerUp"
       >
         <span v-if="project.status === 'wip'" class="card-face__wip">WIP</span>
-        <div class="card-face__banner">
-          <header class="card-face__header">
-            <span class="card-face__category">{{ project.category }}</span>
-            <span class="card-face__order">No.{{ String(project.order).padStart(2, '0') }}</span>
-          </header>
-          <h2 class="card-face__title">{{ project.title }}</h2>
+        <div class="card-face__inner">
+          <div class="card-face__banner">
+            <header class="card-face__header">
+              <span class="card-face__category">{{ project.category }}</span>
+              <span class="card-face__order">No.{{ String(project.order).padStart(2, '0') }}</span>
+            </header>
+            <h2 class="card-face__title">{{ project.title }}</h2>
+          </div>
+          <div class="card-face__art">
+            <ProjectImage :slug="project.slug" :src="project.coverImage" :alt="project.title" />
+            <div class="card-face__shine" aria-hidden="true"></div>
+          </div>
+          <p class="card-face__tagline">{{ project.tagline }}</p>
         </div>
-        <div class="card-face__art">
-          <ProjectImage :slug="project.slug" :src="project.coverImage" :alt="project.title" />
-          <div class="card-face__shine" aria-hidden="true"></div>
-        </div>
-        <p class="card-face__tagline">{{ project.tagline }}</p>
       </article>
 
       <div class="card-face card-face--back">
@@ -150,11 +152,19 @@ const slotStyle = computed(() => {
 .card-face--front {
   display: flex;
   flex-direction: column;
-  padding: 0.7rem;
   background: #ffffff;
   border: 4px solid var(--yellow);
   box-shadow: 0 10px 0 -4px rgba(0, 0, 0, 0.08), 0 14px 24px -10px rgba(20, 24, 28, 0.35);
   user-select: none;
+}
+
+.card-face__inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 14px;
+  padding: 0.7rem;
 }
 
 .card-slot--flipped .card-face--front {
@@ -185,7 +195,7 @@ const slotStyle = computed(() => {
   margin: -0.7rem -0.7rem 0;
   padding: 0.5rem 0.7rem 0;
   background: var(--accent);
-  clip-path: polygon(0 0, 100% 0, 100% 64%, 0 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 64%);
 }
 
 .card-face__header {

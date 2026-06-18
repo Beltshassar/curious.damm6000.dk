@@ -20,18 +20,24 @@ onKeyStroke('Escape', () => {
       <div v-if="flippedSlug" class="card-deck__backdrop" @click="emit('close')"></div>
     </Transition>
 
-    <TransitionGroup name="card-deck">
-      <PlayingCard
-        v-for="entry in deck"
-        :key="entry.project.slug"
-        :project="entry.project"
-        :stack-position="entry.stackPosition"
-        :is-flipped="entry.project.slug === flippedSlug"
-        @tap="emit('tap', entry.project.slug)"
-        @swiped="emit('cycle')"
-        @close="emit('close')"
-      />
-    </TransitionGroup>
+    <!--
+      Plain keyed v-for, not <TransitionGroup>: each card already animates its
+      own position/size via the transform/transition it computes in :style.
+      TransitionGroup's move animation measures bounding boxes before/after
+      every update and injects its own corrective transform on top of ours -
+      the two fought each other and were the cause of cards occasionally
+      landing stuck off-screen after a swipe or a flip/unflip.
+    -->
+    <PlayingCard
+      v-for="entry in deck"
+      :key="entry.project.slug"
+      :project="entry.project"
+      :stack-position="entry.stackPosition"
+      :is-flipped="entry.project.slug === flippedSlug"
+      @tap="emit('tap', entry.project.slug)"
+      @swiped="emit('cycle')"
+      @close="emit('close')"
+    />
   </div>
 </template>
 
