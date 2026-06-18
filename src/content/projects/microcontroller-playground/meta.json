@@ -1,0 +1,19 @@
+{
+  "slug": "microcontroller-playground",
+  "title": "Microcontroller Playground for Kids",
+  "tagline": "A playful learning experience using ESP microcontrollers and an online Scratch-like programming tool",
+  "category": "Education",
+  "order": 2,
+  "status": "done",
+  "goal": "Introduce children (age 10-12) to physical computing through playful experimentation.",
+  "concept": "Create a low-barrier environment where kids can explore electronics using block-based programming, build their own circuits and experiment with interactive behaviors like lights, buttons, and sounds.",
+  "setup": [
+    "ESP8266 microcontrollers",
+    "Breadboards and jumper wires",
+    "LEDs, switches, speakers",
+    "Block-based programming environment generating ESP code"
+  ],
+  "outcome": "High engagement and rapid experimentation. Many kids quickly began trying out their own ideas.",
+  "coverImage": "images/cover.jpg",
+  "gallery": ["images/01.jpg", "images/02.jpg"]
+}

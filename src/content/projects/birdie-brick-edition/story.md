@@ -1,0 +1,1 @@
+My wife spotted a very nice commercial air quality sensor at birdie.design, and inspired by the idea, I set out to recreate the concept using materials at hand. It's integrated with our existing IoT air quality sensor and connected by a Home Assistant automation. Using LEGO for the bird let us change design and colours, and flash our shared family LEGO affection all at once.

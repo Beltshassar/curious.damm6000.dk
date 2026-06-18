@@ -1,0 +1,18 @@
+{
+  "slug": "skrammel-aften",
+  "title": "Skrammel-aften (Trash Night)",
+  "tagline": "Encouraging curiosity through dismantling electronics",
+  "category": "Education",
+  "order": 3,
+  "status": "done",
+  "goal": "Encourage curiosity about technology by letting kids dismantle broken electronics and investigate the components inside.",
+  "concept": "Kids open real electronic equipment and see what's inside.",
+  "setup": [
+    "Discarded laptops, keyboards, speakers",
+    "Screwdrivers and tools",
+    "Encourage curiosity and questions"
+  ],
+  "outcome": "Kids quickly start asking questions about components and how devices work, turning destruction into discovery.",
+  "coverImage": "images/cover.jpg",
+  "gallery": ["images/01.jpg", "images/02.jpg", "images/03.jpg"]
+}

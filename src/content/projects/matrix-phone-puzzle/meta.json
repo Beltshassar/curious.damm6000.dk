@@ -1,0 +1,20 @@
+{
+  "slug": "matrix-phone-puzzle",
+  "title": "Matrix Phone Puzzle",
+  "tagline": "Physical prop for an interactive geocaching challenge",
+  "category": "Geocaching",
+  "order": 1,
+  "status": "done",
+  "goal": "Create an interactive artifact that reveals a hidden clue through sound analysis.",
+  "concept": "Phone rings > user answers > cryptic message played back > spectrogram reveals hidden clue",
+  "setup": [
+    "Arduino",
+    "Audio playback circuit",
+    "Old landline phone",
+    "SD card with audio clip",
+    "USB cable"
+  ],
+  "outcome": "Players decode the message and advance in the geocache puzzle.",
+  "coverImage": "images/cover.jpg",
+  "gallery": ["images/01.jpg", "images/02.jpg"]
+}
