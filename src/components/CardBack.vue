@@ -72,6 +72,8 @@ const storyParagraphs = computed(() =>
   height: 100%;
   border-radius: 18px;
   background: var(--surface);
+  border: 4px solid var(--yellow);
+  box-shadow: 0 10px 0 -4px rgba(0, 0, 0, 0.08), 0 14px 24px -10px rgba(20, 24, 28, 0.35);
   text-align: left;
 }
 

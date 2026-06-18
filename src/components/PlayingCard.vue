@@ -37,9 +37,12 @@ const { dragOffset, isDragging, onPointerDown, onPointerMove, onPointerUp } = us
 
 const slotStyle = computed(() => {
   if (props.isFlipped) {
+    // position:fixed + inset:0 + margin:auto centers on the viewport directly,
+    // independent of where the (small, fixed-size) deck container sits on the
+    // page - translate(-50%,-50%) relative to that container is what put the
+    // flipped card in the corner on mobile.
     return {
-      transform: 'translate(-50%, -50%)',
-      transition: `${SIZE_TRANSITION}, transform 380ms ease`,
+      transition: SIZE_TRANSITION,
       zIndex: 1000,
     }
   }
@@ -84,11 +87,13 @@ const slotStyle = computed(() => {
         @pointercancel="onPointerUp"
       >
         <span v-if="project.status === 'wip'" class="card-face__wip">WIP</span>
-        <header class="card-face__header">
-          <span class="card-face__category">{{ project.category }}</span>
-          <span class="card-face__order">No.{{ String(project.order).padStart(2, '0') }}</span>
-        </header>
-        <h2 class="card-face__title">{{ project.title }}</h2>
+        <div class="card-face__banner">
+          <header class="card-face__header">
+            <span class="card-face__category">{{ project.category }}</span>
+            <span class="card-face__order">No.{{ String(project.order).padStart(2, '0') }}</span>
+          </header>
+          <h2 class="card-face__title">{{ project.title }}</h2>
+        </div>
         <div class="card-face__art">
           <ProjectImage :slug="project.slug" :src="project.coverImage" :alt="project.title" />
           <div class="card-face__shine" aria-hidden="true"></div>
@@ -115,6 +120,9 @@ const slotStyle = computed(() => {
 }
 
 .card-slot--flipped {
+  position: fixed;
+  inset: 0;
+  margin: auto;
   width: min(92vw, 380px, 60vh);
   aspect-ratio: 7 / 10;
   height: auto;
@@ -144,7 +152,7 @@ const slotStyle = computed(() => {
   flex-direction: column;
   padding: 0.7rem;
   background: #ffffff;
-  border: 7px solid var(--yellow);
+  border: 4px solid var(--yellow);
   box-shadow: 0 10px 0 -4px rgba(0, 0, 0, 0.08), 0 14px 24px -10px rgba(20, 24, 28, 0.35);
   user-select: none;
 }
@@ -172,14 +180,18 @@ const slotStyle = computed(() => {
   transform: rotate(8deg);
 }
 
+.card-face__banner {
+  height: 124px;
+  margin: -0.7rem -0.7rem 0;
+  padding: 0.5rem 0.7rem 0;
+  background: var(--accent);
+  clip-path: polygon(0 0, 100% 0, 100% 64%, 0 100%);
+}
+
 .card-face__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.3rem 0.6rem;
-  margin: -0.7rem -0.7rem 0;
-  border-radius: 12px 12px 0 0;
-  background: var(--accent);
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -188,21 +200,24 @@ const slotStyle = computed(() => {
 }
 
 .card-face__title {
-  margin: 0.5rem 0 0.4rem;
+  margin: 0.5rem 0 0;
   font-family: var(--font-display);
   font-size: 1.05rem;
   line-height: 1.15;
   text-align: center;
-  color: var(--text);
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .card-face__art {
   position: relative;
   flex: 1;
+  margin-top: -2.6rem;
   border-radius: 10px;
   overflow: hidden;
   background: rgba(0, 0, 0, 0.05);
-  border: 2px solid var(--accent);
+  border: 3px solid #ffffff;
+  box-shadow: 0 3px 10px -2px rgba(0, 0, 0, 0.35);
 }
 
 .card-face__shine {
