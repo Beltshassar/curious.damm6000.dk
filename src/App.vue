@@ -1,14 +1,10 @@
 <script setup>
-import { computed } from 'vue'
 import CardDeck from './components/CardDeck.vue'
-import CardDetailOverlay from './components/CardDetailOverlay.vue'
 import { loadProjects } from './content/loadProjects'
 import { useCardDeck } from './composables/useCardDeck'
 
 const projects = loadProjects()
-const { deck, expandedProject, cycleToBack, expand, collapse } = useCardDeck(projects)
-
-const gestureDisabled = computed(() => expandedProject.value !== null)
+const { deck, expandedSlug, cycleToBack, expand, collapse } = useCardDeck(projects)
 </script>
 
 <template>
@@ -16,17 +12,13 @@ const gestureDisabled = computed(() => expandedProject.value !== null)
     <header class="app__header">
       <h1 class="app__title">Curious &amp; Geeky</h1>
       <p class="app__subtitle">
-        A deck of side projects. Drag the top card away to see the next one, tap it to learn more.
+        A deck of side projects. Drag the top card away to see the next one, tap it to flip it over.
       </p>
     </header>
 
-    <CardDeck :deck="deck" :gesture-disabled="gestureDisabled" @tap="expand" @cycle="cycleToBack" />
+    <CardDeck :deck="deck" :flipped-slug="expandedSlug" @tap="expand" @cycle="cycleToBack" @close="collapse" />
 
     <p class="app__hint">{{ deck.length }} cards in the deck</p>
-
-    <Transition name="overlay-fade">
-      <CardDetailOverlay v-if="expandedProject" :project="expandedProject" @close="collapse" />
-    </Transition>
   </main>
 </template>
 
@@ -48,10 +40,10 @@ const gestureDisabled = computed(() => expandedProject.value !== null)
 
 .app__title {
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 2.2rem;
   margin: 0 0 0.6rem;
-  color: var(--text);
-  text-shadow: 0 0 20px rgba(43, 240, 255, 0.35);
+  color: var(--red);
+  -webkit-text-stroke: 1.5px var(--text);
 }
 
 .app__subtitle {
@@ -62,6 +54,6 @@ const gestureDisabled = computed(() => expandedProject.value !== null)
 .app__hint {
   font-size: 0.8rem;
   color: var(--text-muted);
-  opacity: 0.7;
+  opacity: 0.8;
 }
 </style>

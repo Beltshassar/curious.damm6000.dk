@@ -1,14 +1,17 @@
 :root {
-  --bg: #11142b;
-  --surface: #1b1f3d;
-  --text: #eef0fa;
-  --text-muted: #aab0d6;
-  --amber: #ffb84d;
-  --font-display: 'Audiowide', system-ui, sans-serif;
+  --bg: #eef4fb;
+  --surface: #ffffff;
+  --text: #14181c;
+  --text-muted: #5b626b;
+  --yellow: #ffd500;
+  --red: #d01012;
+  --blue: #0058a8;
+  --green: #1a8a3c;
+  --font-display: 'Titan One', system-ui, sans-serif;
   --font-body: 'Rubik', system-ui, sans-serif;
 
   font-family: var(--font-body);
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * {
@@ -22,7 +25,7 @@ body {
 }
 
 body {
-  background: radial-gradient(circle at 50% 0%, #1c2150 0%, var(--bg) 60%);
+  background: radial-gradient(circle at 50% 0%, #ffffff 0%, var(--bg) 70%);
   color: var(--text);
 }
 
@@ -34,18 +37,18 @@ button {
   font-family: inherit;
 }
 
-/* Detail overlay fade-in/out, triggered by <Transition name="overlay-fade"> in App.vue */
-.overlay-fade-enter-active,
-.overlay-fade-leave-active {
+/* Backdrop fade-in/out behind a flipped card */
+.backdrop-fade-enter-active,
+.backdrop-fade-leave-active {
   transition: opacity 220ms ease;
 }
 
-.overlay-fade-enter-from,
-.overlay-fade-leave-to {
+.backdrop-fade-enter-from,
+.backdrop-fade-leave-to {
   opacity: 0;
 }
 
-/* Staggered info-box fade-in, triggered by <TransitionGroup name="info-box"> */
+/* Staggered info-box fade-in on the card back, via <TransitionGroup name="info-box"> */
 .info-box-enter-active {
   transition: opacity 320ms ease, transform 320ms ease;
   transition-delay: calc(var(--i, 0) * 70ms);

@@ -1,7 +1,9 @@
+export const FRAME_YELLOW = '#ffd500'
+
 const CATEGORY_COLORS = {
-  Geocaching: '#ff2bd6',
-  Education: '#2bf0ff',
-  'Home Automation': '#39ff84',
+  Geocaching: '#d01012',
+  Education: '#0058a8',
+  'Home Automation': '#1a8a3c',
 }
 
 export function hashHue(seed) {
@@ -11,10 +13,10 @@ export function hashHue(seed) {
 }
 
 export function categoryColor(category) {
-  return CATEGORY_COLORS[category] ?? `hsl(${hashHue(category)}, 85%, 60%)`
+  return CATEGORY_COLORS[category] ?? `hsl(${hashHue(category)}, 75%, 42%)`
 }
 
 export function seedGradient(seed) {
   const hue = hashHue(seed)
-  return `linear-gradient(135deg, hsl(${hue}, 70%, 22%), hsl(${(hue + 40) % 360}, 70%, 12%))`
+  return `linear-gradient(135deg, hsl(${hue}, 75%, 62%), hsl(${(hue + 40) % 360}, 75%, 48%))`
 }

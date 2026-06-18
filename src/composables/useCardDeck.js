@@ -11,10 +11,6 @@ export function useCardDeck(projects) {
     })),
   )
 
-  const expandedProject = computed(
-    () => projects.find((p) => p.slug === expandedSlug.value) ?? null,
-  )
-
   function cycleToBack() {
     const [front, ...rest] = order.value
     order.value = [...rest, front]
@@ -28,5 +24,5 @@ export function useCardDeck(projects) {
     expandedSlug.value = null
   }
 
-  return { deck, expandedSlug, expandedProject, cycleToBack, expand, collapse }
+  return { deck, expandedSlug, cycleToBack, expand, collapse }
 }

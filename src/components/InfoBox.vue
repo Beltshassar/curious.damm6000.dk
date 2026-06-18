@@ -15,18 +15,17 @@ defineProps({
 
 <style scoped>
 .info-box {
-  background: var(--surface);
-  border: 1px solid var(--accent);
+  background: #fbfbfb;
+  border: 2px solid var(--accent);
   border-radius: 12px;
-  padding: 0.8rem 1rem;
-  box-shadow: 0 0 14px -6px var(--accent);
+  padding: 0.7rem 0.9rem;
 }
 
 .info-box__label {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.3rem;
   font-family: var(--font-display);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--accent);
 }
