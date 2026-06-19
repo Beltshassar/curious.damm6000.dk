@@ -13,8 +13,6 @@ const props = defineProps({
 
 const emit = defineEmits(['tap', 'swiped', 'close'])
 
-const SIZE_TRANSITION = 'width 380ms ease, height 380ms ease'
-
 const isTop = computed(() => props.stackPosition === 0)
 const accent = computed(() => categoryColor(props.project.category))
 const disabled = computed(() => !isTop.value || props.isFlipped)
@@ -35,17 +33,18 @@ const { dragOffset, isDragging, onPointerDown, onPointerMove, onPointerUp } = us
   },
 })
 
-// Centering is handled structurally (inset:0 + margin:auto, in both the
-// normal and flipped CSS states below) rather than via a translate(-50%,-50%)
-// in transform. transform is reserved purely for the fan/drag offset, which
-// is zero at rest - so toggling isFlipped never has to animate transform
-// *from* some other centering value, which is what caused the close-flip
-// jerk (transform was unset/"none" while flipped, so it had to jump from no
-// offset to a -50%/-50% offset the instant it un-flipped).
+// The slot's own box is always 280x400 - "growing" when flipped is purely a
+// transform: scale() (see .card-slot--grown), which the compositor can
+// animate without any layout recalculation. That sidesteps two different
+// bugs from actually resizing width/height: centering broke down whenever
+// the box was briefly larger than its small fixed-size deck container
+// (margin:auto can't go negative, so it anchored to one edge instead), and
+// animating width/height directly had a visible ~150ms startup delay before
+// the browser began interpolating it, since that's a layout-triggering
+// (not compositor-only) animation.
 const slotStyle = computed(() => {
   if (props.isFlipped) {
     return {
-      transition: SIZE_TRANSITION,
       zIndex: 1000,
     }
   }
@@ -54,7 +53,7 @@ const slotStyle = computed(() => {
     return {
       transform: `translate(${flyDirection.value.x * 2}px, ${flyDirection.value.y * 2}px) rotate(${flyDirection.value.x / 10}deg)`,
       opacity: 0,
-      transition: `${SIZE_TRANSITION}, transform 300ms ease-in, opacity 300ms ease-in`,
+      transition: 'transform 300ms ease-in, opacity 300ms ease-in',
       zIndex: 100,
     }
   }
@@ -62,7 +61,7 @@ const slotStyle = computed(() => {
   if (isTop.value) {
     return {
       transform: `translate(${dragOffset.value.x}px, ${dragOffset.value.y}px) rotate(${dragOffset.value.x / 20}deg)`,
-      transition: isDragging.value ? SIZE_TRANSITION : `${SIZE_TRANSITION}, transform 200ms ease-out`,
+      transition: isDragging.value ? 'none' : 'transform 200ms ease-out',
       zIndex: 100,
     }
   }
@@ -73,13 +72,13 @@ const slotStyle = computed(() => {
     transform: `translate(${depth * 6}px, ${depth * 4}px) rotate(${sign * depth * 1.5}deg) scale(${Math.max(1 - depth * 0.02, 0.85)})`,
     zIndex: 100 - depth,
     opacity: depth > 5 ? 0 : 1,
-    transition: `${SIZE_TRANSITION}, transform 300ms ease-out, opacity 300ms ease-out`,
+    transition: 'transform 300ms ease-out, opacity 300ms ease-out',
   }
 })
 </script>
 
 <template>
-  <div class="card-slot" :class="{ 'card-slot--flipped': isFlipped }" :style="slotStyle">
+  <div class="card-slot" :class="{ 'card-slot--grown': isFlipped }" :style="slotStyle">
     <div class="card-flip" :class="{ 'card-flip--flipped': isFlipped }">
       <article
         class="card-face card-face--front"
@@ -122,16 +121,13 @@ const slotStyle = computed(() => {
   height: 400px;
   perspective: 1400px;
   touch-action: none;
+  transition: transform 380ms ease;
 }
 
-.card-slot--flipped {
-  position: fixed;
-  /* Same 7:10 ratio as the deck size, expressed as two independent explicit
-     values rather than width + aspect-ratio - toggling aspect-ratio on/off
-     made height snap instantly instead of transitioning smoothly, since it
-     stops being width-derived the moment the class is removed. */
-  width: min(92vw, 380px, 60vh);
-  height: min(131.4vw, 543px, 85.7vh);
+.card-slot--grown {
+  /* Same 7:10 ratio as the deck size, as a scale factor relative to the
+     280px base width rather than a literal width/height change. */
+  transform: scale(calc(min(92vw, 380px, 60vh) / 280px));
 }
 
 .card-flip {
@@ -171,7 +167,7 @@ const slotStyle = computed(() => {
   padding: 0.7rem;
 }
 
-.card-slot--flipped .card-face--front {
+.card-slot--grown .card-face--front {
   cursor: default;
 }
 
@@ -244,7 +240,7 @@ const slotStyle = computed(() => {
   pointer-events: none;
 }
 
-.card-slot:not(.card-slot--flipped) .card-face--front:hover .card-face__shine {
+.card-slot:not(.card-slot--grown) .card-face--front:hover .card-face__shine {
   background-position: 120% 120%;
 }
 
