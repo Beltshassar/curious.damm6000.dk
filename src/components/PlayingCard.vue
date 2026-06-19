@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import ProjectImage from './ProjectImage.vue'
 import CardBack from './CardBack.vue'
 import { categoryColor } from '../utils/color'
@@ -12,6 +12,10 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['tap', 'swiped', 'close'])
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max)
+}
 
 const isTop = computed(() => props.stackPosition === 0)
 const accent = computed(() => categoryColor(props.project.category))
@@ -33,6 +37,36 @@ const { dragOffset, isDragging, onPointerDown, onPointerMove, onPointerUp } = us
   },
 })
 
+// One-time entrance: every card starts off-screen above the deck and "falls"
+// into its resting position with a midair spin, staggered by stack depth.
+// hasEntered flips true once (after a per-card delay) and reuses whichever
+// resting branch below already applies (top card vs fanned-back card) - the
+// entrance is just that branch's normal target transform, approached from an
+// off-screen starting point on a slower, bouncier transition (isEntering).
+const hasEntered = ref(false)
+const isEntering = ref(false)
+const ENTER_TRANSITION = 'transform 900ms cubic-bezier(.17,.84,.32,1.24)'
+
+onMounted(() => {
+  setTimeout(() => {
+    hasEntered.value = true
+    isEntering.value = true
+    setTimeout(() => {
+      isEntering.value = false
+    }, 900)
+  }, 120 + props.stackPosition * 90)
+})
+
+const flipRotation = computed(() => {
+  if (!hasEntered.value) return 400 // mid-spin orientation, settles down to 0 on landing
+  return props.isFlipped ? 180 : 0
+})
+
+const flipStyle = computed(() => ({
+  transform: `rotateY(${flipRotation.value}deg)`,
+  ...(isEntering.value ? { transition: ENTER_TRANSITION } : {}),
+}))
+
 // The slot's own box is always 280x400 - "growing" when flipped is purely a
 // transform: scale() (see .card-slot--grown), which the compositor can
 // animate without any layout recalculation. That sidesteps two different
@@ -43,6 +77,15 @@ const { dragOffset, isDragging, onPointerDown, onPointerMove, onPointerUp } = us
 // the browser began interpolating it, since that's a layout-triggering
 // (not compositor-only) animation.
 const slotStyle = computed(() => {
+  if (!hasEntered.value) {
+    return {
+      transform: `translateY(-140vh) translateX(${props.stackPosition % 2 === 0 ? 16 : -16}px) rotate(${props.stackPosition % 2 === 0 ? -8 : 8}deg)`,
+      opacity: 0,
+      transition: 'none',
+      zIndex: 100 - props.stackPosition,
+    }
+  }
+
   if (props.isFlipped) {
     return {
       zIndex: 1000,
@@ -59,9 +102,13 @@ const slotStyle = computed(() => {
   }
 
   if (isTop.value) {
+    // A 3D tilt proportional to how far the card's been dragged - simulates
+    // lifting/throwing it off the stack rather than sliding it flat.
+    const tiltX = clamp(-dragOffset.value.y / 14, -16, 16)
+    const tiltY = clamp(dragOffset.value.x / 14, -16, 16)
     return {
-      transform: `translate(${dragOffset.value.x}px, ${dragOffset.value.y}px) rotate(${dragOffset.value.x / 20}deg)`,
-      transition: isDragging.value ? 'none' : 'transform 200ms ease-out',
+      transform: `translate(${dragOffset.value.x}px, ${dragOffset.value.y}px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) rotate(${dragOffset.value.x / 28}deg)`,
+      transition: isEntering.value ? ENTER_TRANSITION : isDragging.value ? 'none' : 'transform 220ms ease-out',
       zIndex: 100,
     }
   }
@@ -72,14 +119,14 @@ const slotStyle = computed(() => {
     transform: `translate(${depth * 6}px, ${depth * 4}px) rotate(${sign * depth * 1.5}deg) scale(${Math.max(1 - depth * 0.02, 0.85)})`,
     zIndex: 100 - depth,
     opacity: depth > 5 ? 0 : 1,
-    transition: 'transform 300ms ease-out, opacity 300ms ease-out',
+    transition: isEntering.value ? `${ENTER_TRANSITION}, opacity 500ms ease` : 'transform 300ms ease-out, opacity 300ms ease-out',
   }
 })
 </script>
 
 <template>
   <div class="card-slot" :class="{ 'card-slot--grown': isFlipped }" :style="slotStyle">
-    <div class="card-flip" :class="{ 'card-flip--flipped': isFlipped }">
+    <div class="card-flip" :style="flipStyle">
       <article
         class="card-face card-face--front"
         :style="{ '--accent': accent }"
@@ -88,7 +135,6 @@ const slotStyle = computed(() => {
         @pointerup="onPointerUp"
         @pointercancel="onPointerUp"
       >
-        <span v-if="project.status === 'wip'" class="card-face__wip">WIP</span>
         <div class="card-face__inner">
           <div class="card-face__banner">
             <header class="card-face__header">
@@ -100,6 +146,7 @@ const slotStyle = computed(() => {
           <div class="card-face__art">
             <ProjectImage :slug="project.slug" :src="project.coverImage" :alt="project.title" />
             <div class="card-face__shine" aria-hidden="true"></div>
+            <span v-if="project.status === 'wip'" class="card-face__wip">WIP</span>
           </div>
           <p class="card-face__tagline">{{ project.tagline }}</p>
         </div>
@@ -126,8 +173,11 @@ const slotStyle = computed(() => {
 
 .card-slot--grown {
   /* Same 7:10 ratio as the deck size, as a scale factor relative to the
-     280px base width rather than a literal width/height change. */
-  transform: scale(calc(min(92vw, 380px, 60vh) / 280px));
+     280px base width rather than a literal width/height change. Capped much
+     higher than the deck card itself so the detail view actually uses the
+     available screen space on desktop, while vw/vh keep it fitting on any
+     viewport, mobile included. */
+  transform: scale(calc(min(90vw, 680px, 62vh) / 280px));
 }
 
 .card-flip {
@@ -136,10 +186,6 @@ const slotStyle = computed(() => {
   height: 100%;
   transform-style: preserve-3d;
   transition: transform 480ms ease;
-}
-
-.card-flip--flipped {
-  transform: rotateY(180deg);
 }
 
 .card-face {
@@ -173,21 +219,6 @@ const slotStyle = computed(() => {
 
 .card-face--back {
   transform: rotateY(180deg);
-}
-
-.card-face__wip {
-  position: absolute;
-  top: -0.8rem;
-  right: 0.6rem;
-  z-index: 2;
-  padding: 0.2rem 0.55rem;
-  font-family: var(--font-display);
-  font-size: 0.6rem;
-  color: var(--text);
-  background: var(--yellow);
-  border: 2px solid var(--text);
-  border-radius: 999px;
-  transform: rotate(8deg);
 }
 
 .card-face__banner {
@@ -242,6 +273,22 @@ const slotStyle = computed(() => {
 
 .card-slot:not(.card-slot--grown) .card-face--front:hover .card-face__shine {
   background-position: 120% 120%;
+}
+
+.card-face__wip {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 2;
+  padding: 0.2rem 0.5rem;
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  color: var(--text);
+  background: var(--yellow);
+  border: 2px solid var(--text);
+  border-radius: 999px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  transform: rotate(8deg);
 }
 
 .card-face__tagline {

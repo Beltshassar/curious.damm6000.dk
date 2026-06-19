@@ -46,6 +46,10 @@ onKeyStroke('Escape', () => {
   position: relative;
   width: 280px;
   height: 400px;
+  /* Lets the top card's own rotateX/rotateY drag-tilt (see PlayingCard)
+     render with real 3D depth instead of a flat skew - perspective on an
+     element only affects how its *children's* 3D transforms are rendered. */
+  perspective: 1800px;
 }
 
 .card-deck__backdrop {
