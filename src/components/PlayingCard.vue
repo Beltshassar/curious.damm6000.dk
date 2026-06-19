@@ -35,12 +35,15 @@ const { dragOffset, isDragging, onPointerDown, onPointerMove, onPointerUp } = us
   },
 })
 
+// Centering is handled structurally (inset:0 + margin:auto, in both the
+// normal and flipped CSS states below) rather than via a translate(-50%,-50%)
+// in transform. transform is reserved purely for the fan/drag offset, which
+// is zero at rest - so toggling isFlipped never has to animate transform
+// *from* some other centering value, which is what caused the close-flip
+// jerk (transform was unset/"none" while flipped, so it had to jump from no
+// offset to a -50%/-50% offset the instant it un-flipped).
 const slotStyle = computed(() => {
   if (props.isFlipped) {
-    // position:fixed + inset:0 + margin:auto centers on the viewport directly,
-    // independent of where the (small, fixed-size) deck container sits on the
-    // page - translate(-50%,-50%) relative to that container is what put the
-    // flipped card in the corner on mobile.
     return {
       transition: SIZE_TRANSITION,
       zIndex: 1000,
@@ -49,7 +52,7 @@ const slotStyle = computed(() => {
 
   if (isFlyingAway.value) {
     return {
-      transform: `translate(-50%, -50%) translate(${flyDirection.value.x * 2}px, ${flyDirection.value.y * 2}px) rotate(${flyDirection.value.x / 10}deg)`,
+      transform: `translate(${flyDirection.value.x * 2}px, ${flyDirection.value.y * 2}px) rotate(${flyDirection.value.x / 10}deg)`,
       opacity: 0,
       transition: `${SIZE_TRANSITION}, transform 300ms ease-in, opacity 300ms ease-in`,
       zIndex: 100,
@@ -58,7 +61,7 @@ const slotStyle = computed(() => {
 
   if (isTop.value) {
     return {
-      transform: `translate(-50%, -50%) translate(${dragOffset.value.x}px, ${dragOffset.value.y}px) rotate(${dragOffset.value.x / 20}deg)`,
+      transform: `translate(${dragOffset.value.x}px, ${dragOffset.value.y}px) rotate(${dragOffset.value.x / 20}deg)`,
       transition: isDragging.value ? SIZE_TRANSITION : `${SIZE_TRANSITION}, transform 200ms ease-out`,
       zIndex: 100,
     }
@@ -67,7 +70,7 @@ const slotStyle = computed(() => {
   const depth = props.stackPosition
   const sign = depth % 2 === 0 ? 1 : -1
   return {
-    transform: `translate(-50%, -50%) translate(${depth * 6}px, ${depth * 4}px) rotate(${sign * depth * 1.5}deg) scale(${Math.max(1 - depth * 0.02, 0.85)})`,
+    transform: `translate(${depth * 6}px, ${depth * 4}px) rotate(${sign * depth * 1.5}deg) scale(${Math.max(1 - depth * 0.02, 0.85)})`,
     zIndex: 100 - depth,
     opacity: depth > 5 ? 0 : 1,
     transition: `${SIZE_TRANSITION}, transform 300ms ease-out, opacity 300ms ease-out`,
@@ -113,8 +116,8 @@ const slotStyle = computed(() => {
 <style scoped>
 .card-slot {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  inset: 0;
+  margin: auto;
   width: 280px;
   height: 400px;
   perspective: 1400px;
@@ -123,11 +126,12 @@ const slotStyle = computed(() => {
 
 .card-slot--flipped {
   position: fixed;
-  inset: 0;
-  margin: auto;
+  /* Same 7:10 ratio as the deck size, expressed as two independent explicit
+     values rather than width + aspect-ratio - toggling aspect-ratio on/off
+     made height snap instantly instead of transitioning smoothly, since it
+     stops being width-derived the moment the class is removed. */
   width: min(92vw, 380px, 60vh);
-  aspect-ratio: 7 / 10;
-  height: auto;
+  height: min(131.4vw, 543px, 85.7vh);
 }
 
 .card-flip {
