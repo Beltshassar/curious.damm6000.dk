@@ -1,5 +1,4 @@
 <script setup>
-import { ref, watch } from 'vue'
 import { onKeyStroke } from '@vueuse/core'
 import PlayingCard from './PlayingCard.vue'
 
@@ -13,45 +12,10 @@ const emit = defineEmits(['tap', 'cycle', 'close'])
 onKeyStroke('Escape', () => {
   if (props.flippedSlug) emit('close')
 })
-
-// The flipped card now grows via literal width/height (for crisp native
-// text/image rendering - see PlayingCard), which needs a containing block
-// big enough to center an oversized child in (margin:auto can't go
-// negative). .card-deck--focused makes .card-deck itself fullscreen while
-// anything is flipped, exactly for that purpose.
-//
-// Opening can flip this class on immediately - the container is already
-// full-size before the card grows into it. Closing is the asymmetric case:
-// if the container snapped back to its small 280x400 box in the same tick
-// the card starts shrinking, the still-large card would spend the whole
-// shrink animation oversized relative to it, hitting the same
-// margin:auto-resolves-to-0 bug. So closing keeps the container fullscreen
-// until the card's own shrink transition (380ms) has actually finished.
-const isFocused = ref(false)
-let closeTimer = null
-
-watch(
-  () => props.flippedSlug,
-  (slug) => {
-    if (closeTimer) {
-      clearTimeout(closeTimer)
-      closeTimer = null
-    }
-    if (slug) {
-      isFocused.value = true
-    } else {
-      closeTimer = setTimeout(() => {
-        isFocused.value = false
-        closeTimer = null
-      }, 420)
-    }
-  },
-  { immediate: true },
-)
 </script>
 
 <template>
-  <div class="card-deck" :class="{ 'card-deck--focused': isFocused }">
+  <div class="card-deck">
     <Transition name="backdrop-fade">
       <div v-if="flippedSlug" class="card-deck__backdrop" @click="emit('close')"></div>
     </Transition>
@@ -82,13 +46,6 @@ watch(
   position: relative;
   width: 280px;
   height: 400px;
-}
-
-.card-deck--focused {
-  position: fixed;
-  inset: 0;
-  width: auto;
-  height: auto;
 }
 
 .card-deck__backdrop {

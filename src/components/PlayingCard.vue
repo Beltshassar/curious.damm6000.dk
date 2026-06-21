@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useWindowSize } from '@vueuse/core'
 import ProjectImage from './ProjectImage.vue'
 import CardBack from './CardBack.vue'
@@ -20,7 +20,38 @@ function clamp(value, min, max) {
 
 const isTop = computed(() => props.stackPosition === 0)
 const accent = computed(() => categoryColor(props.project.category))
-const disabled = computed(() => !isTop.value || props.isFlipped)
+
+// isFocused controls position:fixed (see .card-slot--focused) - it tracks
+// isFlipped but lags behind by one shrink-transition's worth of time when
+// closing. Growing can switch to position:fixed immediately (the viewport
+// is always a big-enough containing block, capped via growSize below), but
+// closing can't snap straight back to position:absolute in the same tick:
+// while still-large but now centered relative to the small 280x400 deck
+// instead of the viewport, margin:auto can't go negative to center an
+// oversized child, so it'd anchor to one edge for the whole shrink. Keeping
+// position:fixed a little longer avoids that entirely.
+const isFocused = ref(false)
+let closeTimer = null
+
+watch(
+  () => props.isFlipped,
+  (flipped) => {
+    if (closeTimer) {
+      clearTimeout(closeTimer)
+      closeTimer = null
+    }
+    if (flipped) {
+      isFocused.value = true
+    } else {
+      closeTimer = setTimeout(() => {
+        isFocused.value = false
+        closeTimer = null
+      }, 420)
+    }
+  },
+)
+
+const disabled = computed(() => !isTop.value || props.isFlipped || isFocused.value)
 
 const isFlyingAway = ref(false)
 const flyDirection = ref({ x: 0, y: 0 })
@@ -72,7 +103,7 @@ const flipRotation = computed(() => {
 // matters because perspective on an ancestor makes it the containing block
 // for any position:fixed descendant - .card-deck having it broke the
 // fullscreen backdrop, shrinking it down to the deck's own 280x400 box.
-const isDraggable = computed(() => isTop.value && !props.isFlipped)
+const isDraggable = computed(() => isTop.value && !props.isFlipped && !isFocused.value)
 
 const flipStyle = computed(() => {
   const tiltX = isDraggable.value ? clamp(-dragOffset.value.y / 14, -16, 16) : 0
@@ -102,9 +133,12 @@ const flipStyle = computed(() => {
 //
 // This reintroduces the centering problem literal sizing had before
 // (margin:auto can't go negative to center a child larger than its
-// container), so .card-deck itself now becomes fullscreen while anything
-// is flipped (see CardDeck.vue's isFocused) - that's the containing block
-// this card centers within once it's no longer just 280x400.
+// container) - handled by switching this card itself to position:fixed
+// while grown (see isFocused/.card-slot--focused), so it centers on the
+// viewport directly instead of the small 280x400 deck. Making .card-deck
+// itself fullscreen instead (an earlier attempt) pulled it out of .app's
+// normal flex flow, which shifted the header/hint text every time a card
+// flipped - .card-deck now never changes size or position at all.
 const { width: viewportWidth, height: viewportHeight } = useWindowSize()
 
 const growSize = computed(() => {
@@ -179,7 +213,11 @@ const slotStyle = computed(() => {
 </script>
 
 <template>
-  <div class="card-slot" :class="{ 'card-slot--grown': isFlipped }" :style="slotStyle">
+  <div
+    class="card-slot"
+    :class="{ 'card-slot--grown': isFlipped, 'card-slot--focused': isFocused }"
+    :style="slotStyle"
+  >
     <div class="card-flip" :style="flipStyle">
       <article
         class="card-face card-face--front"
@@ -225,6 +263,12 @@ const slotStyle = computed(() => {
   transition: transform 380ms ease, width 380ms ease, height 380ms ease;
 }
 
+.card-slot--focused {
+  /* Centers on the viewport instead of the small 280x400 .card-deck, which
+     never changes size - see the isFocused comment above for why. */
+  position: fixed;
+}
+
 .card-flip {
   position: relative;
   width: 100%;
@@ -247,6 +291,11 @@ const slotStyle = computed(() => {
   border: 4px solid var(--yellow);
   box-shadow: 0 10px 0 -4px rgba(0, 0, 0, 0.08), 0 14px 24px -10px rgba(20, 24, 28, 0.35);
   user-select: none;
+  cursor: pointer;
+}
+
+.card-face--front:active {
+  cursor: grabbing;
 }
 
 .card-face__inner {
