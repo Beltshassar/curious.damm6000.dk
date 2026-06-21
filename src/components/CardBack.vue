@@ -97,6 +97,7 @@ const storyParagraphs = computed(() =>
 .card-back__scroll {
   height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;

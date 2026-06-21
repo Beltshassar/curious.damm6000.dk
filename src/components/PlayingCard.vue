@@ -62,10 +62,30 @@ const flipRotation = computed(() => {
   return props.isFlipped ? 180 : 0
 })
 
-const flipStyle = computed(() => ({
-  transform: `rotateY(${flipRotation.value}deg)`,
-  ...(isEntering.value ? { transition: ENTER_TRANSITION } : {}),
-}))
+// The drag tilt (rotateX/rotateY, proportional to drag distance) lives here
+// rather than on .card-slot's own transform, because perspective only
+// affects how an element's *children's* 3D transforms render - .card-slot
+// already has its own perspective for this exact purpose (it's what gives
+// the open/close flip below its depth), so reusing it here means the tilt
+// gets correct 3D depth without needing perspective on .card-deck too. That
+// matters because perspective on an ancestor makes it the containing block
+// for any position:fixed descendant - .card-deck having it broke the
+// fullscreen backdrop, shrinking it down to the deck's own 280x400 box.
+const isDraggable = computed(() => isTop.value && !props.isFlipped)
+
+const flipStyle = computed(() => {
+  const tiltX = isDraggable.value ? clamp(-dragOffset.value.y / 14, -16, 16) : 0
+  const tiltY = isDraggable.value ? clamp(dragOffset.value.x / 14, -16, 16) : 0
+  const style = {
+    transform: `rotateY(${flipRotation.value}deg) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`,
+  }
+  if (isEntering.value) {
+    style.transition = ENTER_TRANSITION
+  } else if (isDraggable.value) {
+    style.transition = isDragging.value ? 'none' : 'transform 220ms ease-out'
+  }
+  return style
+})
 
 // The slot's own box is always 280x400 - "growing" when flipped is purely a
 // transform: scale() (see .card-slot--grown), which the compositor can
@@ -102,12 +122,11 @@ const slotStyle = computed(() => {
   }
 
   if (isTop.value) {
-    // A 3D tilt proportional to how far the card's been dragged - simulates
-    // lifting/throwing it off the stack rather than sliding it flat.
-    const tiltX = clamp(-dragOffset.value.y / 14, -16, 16)
-    const tiltY = clamp(dragOffset.value.x / 14, -16, 16)
+    // The 3D tilt itself lives on .card-flip's transform (see flipStyle) -
+    // this just handles plain 2D position/spin, which doesn't need
+    // perspective at all.
     return {
-      transform: `translate(${dragOffset.value.x}px, ${dragOffset.value.y}px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) rotate(${dragOffset.value.x / 28}deg)`,
+      transform: `translate(${dragOffset.value.x}px, ${dragOffset.value.y}px) rotate(${dragOffset.value.x / 28}deg)`,
       transition: isEntering.value ? ENTER_TRANSITION : isDragging.value ? 'none' : 'transform 220ms ease-out',
       zIndex: 100,
     }
@@ -264,15 +283,22 @@ const slotStyle = computed(() => {
 .card-face__shine {
   position: absolute;
   inset: 0;
-  background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.55) 50%, transparent 60%);
-  background-size: 250% 250%;
-  background-position: -20% -20%;
-  transition: background-position 700ms ease;
+  background: linear-gradient(115deg, transparent 44%, rgba(255, 255, 255, 0.65) 50%, transparent 56%);
+  background-size: 220% 220%;
+  background-position: -45% -45%;
+  opacity: 0;
+  /* Both position and opacity animate together: the band sweeps fully
+     across while fading in, then is off-canvas again by the time it's
+     fully faded in - so rest and "settled hover" (mouse holding still)
+     are both cleanly invisible, with no partial sliver cropped at either
+     end. Only the sweep itself, mid-transition, is visible. */
+  transition: background-position 700ms ease, opacity 700ms ease;
   pointer-events: none;
 }
 
 .card-slot:not(.card-slot--grown) .card-face--front:hover .card-face__shine {
-  background-position: 120% 120%;
+  background-position: 145% 145%;
+  opacity: 1;
 }
 
 .card-face__wip {

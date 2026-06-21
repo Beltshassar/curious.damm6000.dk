@@ -15,6 +15,11 @@ defineProps({
 
 <style scoped>
 .info-box {
+  /* Grid items default to min-width:auto, which uses the content's
+     max-content size as a floor - any unbroken run of text long enough
+     forces the column (and the whole grid) wider than its container. This
+     lets the box shrink below that and wrap text normally instead. */
+  min-width: 0;
   background: #fbfbfb;
   border: 2px solid var(--accent);
   border-radius: 12px;
@@ -34,6 +39,7 @@ defineProps({
   font-size: 0.85rem;
   line-height: 1.45;
   color: var(--text);
+  overflow-wrap: break-word;
 }
 
 .info-box__body p {
