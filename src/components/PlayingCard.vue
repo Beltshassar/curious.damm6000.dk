@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useWindowSize } from '@vueuse/core'
 import ProjectImage from './ProjectImage.vue'
 import CardBack from './CardBack.vue'
 import { categoryColor } from '../utils/color'
@@ -88,7 +89,7 @@ const flipStyle = computed(() => {
 })
 
 // The slot's own box is always 280x400 - "growing" when flipped is purely a
-// transform: scale() (see .card-slot--grown), which the compositor can
+// transform: scale() (see growScale below), which the compositor can
 // animate without any layout recalculation. That sidesteps two different
 // bugs from actually resizing width/height: centering broke down whenever
 // the box was briefly larger than its small fixed-size deck container
@@ -96,6 +97,22 @@ const flipStyle = computed(() => {
 // animating width/height directly had a visible ~150ms startup delay before
 // the browser began interpolating it, since that's a layout-triggering
 // (not compositor-only) animation.
+//
+// The scale factors themselves are computed here in JS, reactive to the
+// viewport via useWindowSize, rather than as a CSS calc()/min() expression
+// inside scale(...). That CSS version measured correctly under Chromium
+// (verified via getBoundingClientRect during development) but produced no
+// visible change for at least one real user - calc() dividing two lengths
+// to get a unitless number for scale() is in a genuinely gray area of the
+// spec, and apparently not every browser/version agrees on it. Plain
+// numbers computed in JS sidestep that entirely.
+const { width: viewportWidth, height: viewportHeight } = useWindowSize()
+
+const growScale = computed(() => ({
+  x: Math.min(viewportWidth.value * 0.94, 760) / 280,
+  y: Math.min(viewportHeight.value * 0.88, 980) / 400,
+}))
+
 const slotStyle = computed(() => {
   if (!hasEntered.value) {
     return {
@@ -108,6 +125,7 @@ const slotStyle = computed(() => {
 
   if (props.isFlipped) {
     return {
+      transform: `scale(${growScale.value.x}, ${growScale.value.y})`,
       zIndex: 1000,
     }
   }
@@ -188,20 +206,6 @@ const slotStyle = computed(() => {
   perspective: 1400px;
   touch-action: none;
   transition: transform 380ms ease;
-}
-
-.card-slot--grown {
-  /* Independent X/Y scale factors (not a single uniform scale) so the grown
-     card actually fills most of the viewport's width AND height - a
-     uniform scale forced it to keep the front's tall 7:10 ratio, which on
-     a typical widescreen meant the height cap kicked in long before the
-     card got anywhere near full width. The back face doesn't need to match
-     the front's proportions, so letting width/height grow independently
-     (each capped separately, vw/vh keep it fitting on any viewport) gives
-     a real "zoomed in" feel instead of a slightly-bigger card.
-     transform: scale() rather than literal width/height for the same
-     compositor-only-animation reasons as below. */
-  transform: scale(calc(min(94vw, 760px) / 280px), calc(min(88vh, 980px) / 400px));
 }
 
 .card-flip {
