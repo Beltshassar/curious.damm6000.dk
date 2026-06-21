@@ -191,12 +191,17 @@ const slotStyle = computed(() => {
 }
 
 .card-slot--grown {
-  /* Same 7:10 ratio as the deck size, as a scale factor relative to the
-     280px base width rather than a literal width/height change. Capped much
-     higher than the deck card itself so the detail view actually uses the
-     available screen space on desktop, while vw/vh keep it fitting on any
-     viewport, mobile included. */
-  transform: scale(calc(min(90vw, 680px, 62vh) / 280px));
+  /* Independent X/Y scale factors (not a single uniform scale) so the grown
+     card actually fills most of the viewport's width AND height - a
+     uniform scale forced it to keep the front's tall 7:10 ratio, which on
+     a typical widescreen meant the height cap kicked in long before the
+     card got anywhere near full width. The back face doesn't need to match
+     the front's proportions, so letting width/height grow independently
+     (each capped separately, vw/vh keep it fitting on any viewport) gives
+     a real "zoomed in" feel instead of a slightly-bigger card.
+     transform: scale() rather than literal width/height for the same
+     compositor-only-animation reasons as below. */
+  transform: scale(calc(min(94vw, 760px) / 280px), calc(min(88vh, 980px) / 400px));
 }
 
 .card-flip {
@@ -283,22 +288,18 @@ const slotStyle = computed(() => {
 .card-face__shine {
   position: absolute;
   inset: 0;
-  background: linear-gradient(115deg, transparent 44%, rgba(255, 255, 255, 0.65) 50%, transparent 56%);
-  background-size: 220% 220%;
-  background-position: -45% -45%;
-  opacity: 0;
-  /* Both position and opacity animate together: the band sweeps fully
-     across while fading in, then is off-canvas again by the time it's
-     fully faded in - so rest and "settled hover" (mouse holding still)
-     are both cleanly invisible, with no partial sliver cropped at either
-     end. Only the sweep itself, mid-transition, is visible. */
-  transition: background-position 700ms ease, opacity 700ms ease;
+  background: linear-gradient(115deg, transparent 46%, rgba(255, 255, 255, 0.7) 50%, transparent 54%);
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+  /* At rest this shows just a small sliver in the bottom-right corner; on
+     hover it sweeps fully across to a matching small sliver in the
+     top-left, settling there. */
+  transition: background-position 700ms ease;
   pointer-events: none;
 }
 
 .card-slot:not(.card-slot--grown) .card-face--front:hover .card-face__shine {
-  background-position: 145% 145%;
-  opacity: 1;
+  background-position: 100% 100%;
 }
 
 .card-face__wip {
