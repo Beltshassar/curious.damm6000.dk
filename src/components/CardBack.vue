@@ -105,6 +105,15 @@ const storyParagraphs = computed(() =>
   border-radius: 18px;
 }
 
+/* Flex items default to shrinking to fit a definite-height container even
+   with overflow:auto set - that's what scrolling is for. Without this, the
+   cover photo (no text content to enforce a natural minimum, unlike the
+   info boxes) was the one getting crushed down to a few px to make
+   everything else fit. */
+.card-back__scroll > * {
+  flex-shrink: 0;
+}
+
 .card-back__intro {
   text-align: center;
   padding-right: 1.6rem;
@@ -131,7 +140,11 @@ const storyParagraphs = computed(() =>
 }
 
 .card-back__cover {
-  height: 180px;
+  /* Scales with how big the card itself is allowed to get (see
+     PlayingCard's growSize), rather than a flat px figure that would
+     stay tiny on a now much-larger card - this is meant to actually use
+     the extra room a flipped card has for photos. */
+  height: min(32vh, 340px);
   border-radius: 14px;
   overflow: hidden;
   border: 2px solid var(--accent);
@@ -145,13 +158,13 @@ const storyParagraphs = computed(() =>
 
 .card-back__gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 0.5rem;
 }
 
 .card-back__gallery .project-image,
 .card-back__gallery :deep(.placeholder-art) {
-  height: 96px;
+  height: min(16vh, 160px);
   border-radius: 8px;
 }
 

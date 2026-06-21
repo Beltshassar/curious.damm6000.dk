@@ -88,30 +88,40 @@ const flipStyle = computed(() => {
   return style
 })
 
-// The slot's own box is always 280x400 - "growing" when flipped is purely a
-// transform: scale() (see growScale below), which the compositor can
-// animate without any layout recalculation. That sidesteps two different
-// bugs from actually resizing width/height: centering broke down whenever
-// the box was briefly larger than its small fixed-size deck container
-// (margin:auto can't go negative, so it anchored to one edge instead), and
-// animating width/height directly had a visible ~150ms startup delay before
-// the browser began interpolating it, since that's a layout-triggering
-// (not compositor-only) animation.
+// Growing when flipped now sets literal width/height (aspect ratio locked
+// to the front's 7:10), not a transform: scale(). Scaling up via transform
+// stretches an already-rasterized 280x400 render - text and (especially)
+// photos visibly blur/pixelate the more you enlarge them that way, since
+// the browser decodes images and lays out text for the *unscaled* box,
+// then the compositor just stretches that bitmap. Literal width/height
+// makes the browser actually re-render at the bigger size: images get
+// decoded at (or downsampled to) the real display size, and text - being
+// in rem, relative to the root font-size rather than this box - reads at
+// essentially the same size as it does on the front, not artificially
+// blown up.
 //
-// The scale factors themselves are computed here in JS, reactive to the
-// viewport via useWindowSize, rather than as a CSS calc()/min() expression
-// inside scale(...). That CSS version measured correctly under Chromium
-// (verified via getBoundingClientRect during development) but produced no
-// visible change for at least one real user - calc() dividing two lengths
-// to get a unitless number for scale() is in a genuinely gray area of the
-// spec, and apparently not every browser/version agrees on it. Plain
-// numbers computed in JS sidestep that entirely.
+// This reintroduces the centering problem literal sizing had before
+// (margin:auto can't go negative to center a child larger than its
+// container), so .card-deck itself now becomes fullscreen while anything
+// is flipped (see CardDeck.vue's isFocused) - that's the containing block
+// this card centers within once it's no longer just 280x400.
 const { width: viewportWidth, height: viewportHeight } = useWindowSize()
 
-const growScale = computed(() => ({
-  x: Math.min(viewportWidth.value * 0.94, 760) / 280,
-  y: Math.min(viewportHeight.value * 0.88, 980) / 400,
-}))
+const growSize = computed(() => {
+  const scale = Math.min((viewportWidth.value * 0.94) / 280, (viewportHeight.value * 0.88) / 400, 3.2)
+  return {
+    width: 280 * scale,
+    height: 400 * scale,
+  }
+})
+
+// Whenever a branch below sets its own inline `transition`, that overrides
+// the base .card-slot rule's transition *entirely* (inline always wins over
+// a stylesheet for the same longhand, regardless of which properties it
+// lists) - so width/height wouldn't animate on close (going from the grown
+// branch back to e.g. isTop) unless every other branch's transition value
+// explicitly keeps them in the list too.
+const SIZE_TRANSITION = 'width 380ms ease, height 380ms ease'
 
 const slotStyle = computed(() => {
   if (!hasEntered.value) {
@@ -125,7 +135,8 @@ const slotStyle = computed(() => {
 
   if (props.isFlipped) {
     return {
-      transform: `scale(${growScale.value.x}, ${growScale.value.y})`,
+      width: `${growSize.value.width}px`,
+      height: `${growSize.value.height}px`,
       zIndex: 1000,
     }
   }
@@ -134,7 +145,7 @@ const slotStyle = computed(() => {
     return {
       transform: `translate(${flyDirection.value.x * 2}px, ${flyDirection.value.y * 2}px) rotate(${flyDirection.value.x / 10}deg)`,
       opacity: 0,
-      transition: 'transform 300ms ease-in, opacity 300ms ease-in',
+      transition: `${SIZE_TRANSITION}, transform 300ms ease-in, opacity 300ms ease-in`,
       zIndex: 100,
     }
   }
@@ -145,7 +156,11 @@ const slotStyle = computed(() => {
     // perspective at all.
     return {
       transform: `translate(${dragOffset.value.x}px, ${dragOffset.value.y}px) rotate(${dragOffset.value.x / 28}deg)`,
-      transition: isEntering.value ? ENTER_TRANSITION : isDragging.value ? 'none' : 'transform 220ms ease-out',
+      transition: isEntering.value
+        ? `${SIZE_TRANSITION}, ${ENTER_TRANSITION}`
+        : isDragging.value
+          ? SIZE_TRANSITION
+          : `${SIZE_TRANSITION}, transform 220ms ease-out`,
       zIndex: 100,
     }
   }
@@ -156,7 +171,9 @@ const slotStyle = computed(() => {
     transform: `translate(${depth * 6}px, ${depth * 4}px) rotate(${sign * depth * 1.5}deg) scale(${Math.max(1 - depth * 0.02, 0.85)})`,
     zIndex: 100 - depth,
     opacity: depth > 5 ? 0 : 1,
-    transition: isEntering.value ? `${ENTER_TRANSITION}, opacity 500ms ease` : 'transform 300ms ease-out, opacity 300ms ease-out',
+    transition: isEntering.value
+      ? `${SIZE_TRANSITION}, ${ENTER_TRANSITION}, opacity 500ms ease`
+      : `${SIZE_TRANSITION}, transform 300ms ease-out, opacity 300ms ease-out`,
   }
 })
 </script>
@@ -205,7 +222,7 @@ const slotStyle = computed(() => {
   height: 400px;
   perspective: 1400px;
   touch-action: none;
-  transition: transform 380ms ease;
+  transition: transform 380ms ease, width 380ms ease, height 380ms ease;
 }
 
 .card-flip {
