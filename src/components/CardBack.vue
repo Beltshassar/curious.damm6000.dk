@@ -164,7 +164,9 @@ const storyParagraphs = computed(() =>
 
 .card-back__gallery .project-image,
 .card-back__gallery :deep(.placeholder-art) {
-  height: min(16vh, 160px);
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
   border-radius: 8px;
 }
 
