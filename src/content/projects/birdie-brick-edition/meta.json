@@ -4,14 +4,15 @@
   "tagline": "Intuitive data visualization (work in progress)",
   "category": "Home Automation",
   "order": 4,
-  "status": "wip",
+  "status": "done",
   "goal": "Visualize air-quality and encourage the family to open windows for a better indoor climate.",
   "concept": "A decorative canary sitting on a branch: when air quality drops, the bird \"faints\" and ends up hanging upside down, warning of high levels of CO2 and VOC, like a canary in the coal mine.",
   "setup": [
     "ESP8266 microcontroller",
     "Servo motor",
     "IoT air quality sensor",
-    "Home Assistant automation"
+    "Home Assistant automation",
+    "LEGO"
   ],
   "outcome": "Increased awareness of indoor climate, and how low air quality affects concentration and physical wellbeing.",
   "coverImage": "images/bird_cover.jpg",
